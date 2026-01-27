@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { LocationParams } from '../types';
 import { Search, Globe, Map, MapPin, ChevronDown, Ban } from 'lucide-react';
@@ -10,7 +9,6 @@ interface InputFormProps {
 }
 
 const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading }) => {
-  // Initial state defaults to empty strings for Region and Country, implying "All"
   const [params, setParams] = useState<LocationParams>({
     continent: 'Asia',
     region: '',
@@ -18,7 +16,6 @@ const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading }) => {
     excludeCountries: ''
   });
 
-  // Webhook / Automation Listener for Data Scraping
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
@@ -50,18 +47,14 @@ const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading }) => {
     onSearch(params);
   };
 
-  // Derive available options based on current selection
   const continents = Object.keys(worldLocations);
   const regions = params.continent ? Object.keys(worldLocations[params.continent] || {}) : [];
-  
-  // Countries are only available if a specific region is selected
   const countries = (params.continent && params.region) 
     ? (worldLocations[params.continent][params.region] || []) 
     : [];
 
   const handleContinentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newContinent = e.target.value;
-    // Reset region and country to empty ("All") when continent changes
     setParams({
       continent: newContinent,
       region: '',
@@ -72,7 +65,6 @@ const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading }) => {
 
   const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newRegion = e.target.value;
-    // Reset country to empty ("All") when region changes
     setParams(prev => ({
       ...prev,
       region: newRegion,
@@ -98,14 +90,14 @@ const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading }) => {
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
       <div className="flex items-center gap-2 mb-6">
         <Search className="w-5 h-5 text-red-600" />
-        <h2 className="text-lg font-semibold text-slate-800">Target Parameters</h2>
+        <h2 className="text-lg font-semibold text-slate-800">Parameter Pencarian Data</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {/* Continent Select */}
         <div className="space-y-2 relative">
           <label className="flex items-center text-sm font-medium text-slate-600 gap-2">
-            <Globe className="w-4 h-4" /> Continent
+            <Globe className="w-4 h-4" /> Benua
           </label>
           <div className="relative">
             <select
@@ -125,7 +117,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading }) => {
         {/* Region Select */}
         <div className="space-y-2 relative">
           <label className="flex items-center text-sm font-medium text-slate-600 gap-2">
-            <Map className="w-4 h-4" /> Region (Optional)
+            <Map className="w-4 h-4" /> Wilayah (Opsional)
           </label>
           <div className="relative">
             <select
@@ -133,7 +125,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading }) => {
               value={params.region}
               onChange={handleRegionChange}
             >
-              <option value="">All Regions</option>
+              <option value="">Semua Wilayah</option>
               {regions.map(r => (
                 <option key={r} value={r}>{r}</option>
               ))}
@@ -145,7 +137,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading }) => {
         {/* Country Select */}
         <div className="space-y-2 relative">
           <label className="flex items-center text-sm font-medium text-slate-600 gap-2">
-            <MapPin className="w-4 h-4" /> Country (Optional)
+            <MapPin className="w-4 h-4" /> Negara (Opsional)
           </label>
           <div className="relative">
             <select
@@ -154,7 +146,7 @@ const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading }) => {
               value={params.country}
               onChange={handleCountryChange}
             >
-              <option value="">All Countries</option>
+              <option value="">Semua Negara</option>
               {countries.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -167,20 +159,20 @@ const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading }) => {
       {/* Exclude Section */}
       <div className="space-y-2 mb-8">
         <label className="flex items-center text-sm font-medium text-red-600 gap-2">
-          <Ban className="w-4 h-4" /> Exclude Countries (Optional)
+          <Ban className="w-4 h-4" /> Kecualikan Negara (Opsional)
         </label>
         <div className="relative">
           <input
             type="text"
-            disabled={!!params.country} // Disable if a specific single country is selected
+            disabled={!!params.country}
             className="w-full pl-4 pr-4 py-2.5 bg-red-50 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all outline-none text-slate-700 placeholder:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            placeholder={params.country ? "Disabled when a specific country is selected" : "e.g. Singapore, China, North Korea (Separate by comma)"}
+            placeholder={params.country ? "Dinonaktifkan saat memilih satu negara spesifik" : "Contoh: Singapore, China (Pisahkan dengan koma)"}
             value={params.excludeCountries || ''}
             onChange={handleExcludeChange}
           />
           {!params.country && (
             <p className="text-xs text-slate-500 mt-1 ml-1">
-              Any countries listed here will be omitted from the search results.
+              Negara yang tercantum di sini tidak akan dimasukkan dalam hasil scraping.
             </p>
           )}
         </div>
@@ -201,12 +193,12 @@ const InputForm: React.FC<InputFormProps> = ({ onSearch, isLoading }) => {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Thinking (Gemini 3 Pro)...
+              AI Sedang Mengekstrak Data...
             </>
           ) : (
             <>
               <Search className="w-4 h-4" />
-              Extract Data
+              Mulai Scraping
             </>
           )}
         </button>

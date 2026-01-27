@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LogisticsPoint, TransportType } from '../types';
 import { Anchor, Plane, CheckCircle, ExternalLink, RefreshCw, MapPin } from 'lucide-react';
@@ -13,7 +12,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ data, onVerify, verifyingId
   if (data.length === 0) {
     return (
       <div className="text-center py-12 bg-white rounded-xl border border-slate-200 border-dashed">
-        <p className="text-slate-500">No data extracted yet. Enter parameters to start.</p>
+        <p className="text-slate-500 italic">Belum ada data yang diekstraksi. Masukkan parameter untuk memulai.</p>
       </div>
     );
   }
@@ -24,14 +23,13 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ data, onVerify, verifyingId
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Name</th>
-              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Code</th>
-              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Type</th>
-              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Category</th>
-              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Country</th>
-              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Region</th>
-              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Lat / Long</th>
-              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider text-right">Action</th>
+              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Nama Fasilitas</th>
+              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Kode</th>
+              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Kategori</th>
+              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Negara</th>
+              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Wilayah</th>
+              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider">Koordinat</th>
+              <th className="px-4 py-4 font-semibold text-slate-700 text-xs uppercase tracking-wider text-right">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -39,27 +37,22 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ data, onVerify, verifyingId
               <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                 {/* Name */}
                 <td className="px-4 py-4">
-                  <div className="font-semibold text-slate-900 text-sm">{item.name}</div>
-                  <div className="text-xs text-slate-500">{item.city}</div>
+                  <div className="flex items-center gap-2">
+                    <span className={`p-1.5 rounded ${item.type === TransportType.PORT ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
+                      {item.type === TransportType.PORT ? <Anchor className="w-3.5 h-3.5" /> : <Plane className="w-3.5 h-3.5" />}
+                    </span>
+                    <div>
+                      <div className="font-semibold text-slate-900 text-sm">{item.name}</div>
+                      <div className="text-[10px] text-slate-500 uppercase tracking-tighter">{item.city}</div>
+                    </div>
+                  </div>
                 </td>
                 
                 {/* Code */}
                 <td className="px-4 py-4">
                   <div className="text-xs font-mono font-bold text-slate-600 bg-slate-100 inline-block px-1.5 py-0.5 rounded">
-                    {item.code}
+                    {item.code || 'N/A'}
                   </div>
-                </td>
-                
-                {/* Type */}
-                <td className="px-4 py-4">
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border
-                    ${item.type === TransportType.PORT 
-                      ? 'bg-slate-50 text-slate-700 border-slate-200' 
-                      : 'bg-red-50 text-red-700 border-red-200'
-                    }`}>
-                    {item.type === TransportType.PORT ? <Anchor className="w-3 h-3" /> : <Plane className="w-3 h-3" />}
-                    {item.type}
-                  </span>
                 </td>
 
                 {/* Category */}
@@ -70,7 +63,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ data, onVerify, verifyingId
                 </td>
 
                 {/* Country */}
-                <td className="px-4 py-4 text-sm text-slate-700">
+                <td className="px-4 py-4 text-sm text-slate-700 font-medium">
                   {item.country}
                 </td>
 
@@ -80,9 +73,9 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ data, onVerify, verifyingId
                 </td>
 
                 {/* Lat & Long */}
-                <td className="px-4 py-4 text-xs font-mono text-slate-600 whitespace-nowrap">
-                  <div><span className="text-slate-400">Lat:</span> {item.latitude.toFixed(4)}</div>
-                  <div><span className="text-slate-400">Lon:</span> {item.longitude.toFixed(4)}</div>
+                <td className="px-4 py-4 text-[10px] font-mono text-slate-500 whitespace-nowrap leading-relaxed">
+                  <div>LAT: <span className="text-slate-900">{item.latitude.toFixed(6)}</span></div>
+                  <div>LON: <span className="text-slate-900">{item.longitude.toFixed(6)}</span></div>
                 </td>
 
                 {/* Action */}
@@ -92,8 +85,8 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ data, onVerify, verifyingId
                       href={item.mapsUri} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
-                      title="View on Google Maps"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors shadow-sm"
+                      title="Lihat di Google Maps"
                     >
                       <CheckCircle className="w-4 h-4" />
                     </a>
@@ -101,8 +94,8 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ data, onVerify, verifyingId
                     <button
                       onClick={() => onVerify(item.id)}
                       disabled={verifyingId === item.id}
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-50 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-70"
-                      title="Verify Location"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-red-600 hover:bg-red-600 hover:text-white transition-all disabled:opacity-70 shadow-sm"
+                      title="Verifikasi Lokasi"
                     >
                       {verifyingId === item.id ? (
                         <RefreshCw className="w-4 h-4 animate-spin" />
