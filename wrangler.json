@@ -1,5 +1,5 @@
 {
-  "name": "traderoute-data-extractor",
+  "name": "traderoute",
   "compatibility_date": "2024-09-23",
   "assets": {
     "directory": "./dist"
