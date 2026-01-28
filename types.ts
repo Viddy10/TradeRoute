@@ -1,4 +1,3 @@
-
 export interface LocationParams {
   continent: string;
   region: string;
@@ -9,6 +8,11 @@ export interface LocationParams {
 export enum TransportType {
   PORT = 'Port',
   AIRPORT = 'Airport'
+}
+
+export interface GroundingSource {
+  title: string;
+  uri: string;
 }
 
 export interface LogisticsPoint {
@@ -25,6 +29,7 @@ export interface LogisticsPoint {
   description: string;
   mapsUri?: string; // From Google Maps Grounding
   verified?: boolean;
+  sources?: GroundingSource[];
 }
 
 export interface GenerationStatus {
@@ -137,6 +142,7 @@ export interface BulkRateItem {
   carrier: string;
   // Extra metadata for display
   country?: string;
+  sources?: GroundingSource[];
 }
 
 export enum AirWeightBreak {
@@ -181,4 +187,5 @@ export interface AirRateItem {
   weightBreak?: string;
   mapsUri?: string; 
   verified?: boolean;
+  sources?: GroundingSource[];
 }
