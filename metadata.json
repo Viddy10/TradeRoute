@@ -1,5 +1,5 @@
 {
-  "name": "TradeRoute Data Extractor",
+  "name": "TradeRoute",
   "description": "A comprehensive tool to extract and validate commercial port and airport data for international trade, utilizing Gemini's advanced reasoning and Google Maps grounding.",
   "requestFramePermissions": []
 }
