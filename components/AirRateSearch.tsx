@@ -56,8 +56,8 @@ const AirRateSearch: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const mode = params.get('mode');
 
-    // Updated slug check to 'air-rates'
-    if (mode === 'air-rates') {
+    // Only allow auto-fill if mode is explicitly 'air'
+    if (mode === 'air') {
       const newQuery = { ...query };
       
       const origin = params.get('origin');

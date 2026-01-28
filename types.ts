@@ -1,3 +1,4 @@
+
 export interface LocationParams {
   continent: string;
   region: string;
@@ -8,11 +9,6 @@ export interface LocationParams {
 export enum TransportType {
   PORT = 'Port',
   AIRPORT = 'Airport'
-}
-
-export interface GroundingSource {
-  title: string;
-  uri: string;
 }
 
 export interface LogisticsPoint {
@@ -29,7 +25,6 @@ export interface LogisticsPoint {
   description: string;
   mapsUri?: string; // From Google Maps Grounding
   verified?: boolean;
-  sources?: GroundingSource[];
 }
 
 export interface GenerationStatus {
@@ -38,8 +33,9 @@ export interface GenerationStatus {
   error?: string;
 }
 
-// --- Shipping Analysis Types ---
+// --- Shipping Analysis Types (Updated for Local Charges Table) ---
 
+// SEA FREIGHT COMMODITIES (Updated to specific user list)
 export enum CommodityType {
   GENERAL = 'General Cargo',
   VALUABLE = 'Valuable Cargo (VAL)',
@@ -56,6 +52,7 @@ export enum CommodityType {
   AVI = 'Live Animals (AVI)'
 }
 
+// AIR FREIGHT SPECIFIC COMMODITIES (Unified with user list)
 export enum AirCommodityType {
   GENERAL = 'General Cargo',
   VALUABLE = 'Valuable Cargo (VAL)',
@@ -83,28 +80,34 @@ export enum ContainerSize {
 
 export interface ShippingQuery {
   date: string;
-  commodity: string;
+  commodity: string; // Can be CommodityType or AirCommodityType
   transportMode: TransportType;
   originLocation: string;
 }
 
 export interface ShippingAnalysis {
-  locationName: string;
+  locationName: string; // Name of Port or Airport
+  
+  // Sea Specific
   thc20?: string;
   thc40?: string;
   lolo?: string;
   gateIn?: string;
   sealFee?: string;
   detentionDays?: string;
-  tsc?: string;
-  ra?: string;
-  awbFee?: string;
+
+  // Air Specific
+  tsc?: string; // Terminal Service Charge (per kg)
+  ra?: string; // Regulated Agent / X-Ray (per kg)
+  awbFee?: string; // Air Waybill Fee
+  
+  // Common
   handling: string;
   inspectionFee: string;
   storageFee: string;
   specialTreatment: string;
   adminFee: string;
-  docFee: string;
+  docFee: string; // B/L Doc or AWB Doc
   cooFee: string;
   note: string;
 }
@@ -124,26 +127,27 @@ export interface BulkRateQuery {
   originPort: string;
   commodity: CommodityType;
   containerSize: ContainerSize;
-  targetDate: string;
+  targetDate: string; // YYYY-MM-DD
   destinationRegion: RegionDestination;
-  destinationPort?: string;
+  destinationPort?: string; // Added field
 }
 
 export interface BulkRateItem {
-  origin: string;
-  destination: string;
-  containerType: string;
-  commodity: string;
-  currency: string;
-  rate: string;
-  validUntil: string;
-  transitTime: string;
-  frequency: string;
-  carrier: string;
-  // Extra metadata for display
-  country?: string;
-  sources?: GroundingSource[];
+  destinationPort: string;
+  country: string;
+  region: string;
+  currency: string; // e.g. USD, IDR
+  estimatedPrice: string; // Number only string
+  transitTime: string; // e.g., "25-30 Days"
+  frequency: string; // e.g., "Weekly"
+  validity: string; // e.g., "Valid until end of week 42"
+  carrierIndication: string; // e.g., "MSC, Maersk, Evergreen"
+  commodity?: string;
+  containerSize?: string;
+  originPort?: string;
 }
+
+// --- Air Freight Types ---
 
 export enum AirWeightBreak {
   MIN = 'Min (Minimum)',
@@ -161,13 +165,13 @@ export interface AirRateQuery {
   weightBreak: AirWeightBreak;
   targetDate: string;
   destinationRegion: RegionDestination;
-  destinationAirport?: string;
+  destinationAirport?: string; // Changed from targetCountry
 }
 
 export interface AirRateItem {
   id?: string; 
   originAirport: string;
-  destinationAirport: string;
+  destinationAirport: string; // IATA Code + City
   country: string;
   region: string;
   currency: string; 
@@ -187,5 +191,4 @@ export interface AirRateItem {
   weightBreak?: string;
   mapsUri?: string; 
   verified?: boolean;
-  sources?: GroundingSource[];
 }

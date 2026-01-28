@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ShippingQuery, ShippingAnalysis, CommodityType, AirCommodityType, TransportType } from '../types';
 import { Coins, Package, Info, Download, CalendarDays, Ship, Plane, MapPin } from 'lucide-react';
 import { analyzeShippingCost } from '../services/geminiService';
@@ -107,63 +107,6 @@ const ShippingCalculator: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Extract analysis logic for reuse
-  const performAnalyze = async (searchQuery: ShippingQuery) => {
-    setLoading(true);
-    setError('');
-    setResults([]);
-
-    try {
-      const analysisData = await analyzeShippingCost(searchQuery);
-      setResults(analysisData);
-    } catch (err: any) {
-      setError(err.message || 'Failed to analyze shipping costs');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAnalyze = async (e: React.FormEvent) => {
-    e.preventDefault();
-    performAnalyze(query);
-  };
-
-  // Webhook / Automation Listener
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const mode = params.get('mode');
-
-    if (mode === 'shipping-cost') {
-      const newQuery = { ...query };
-      
-      const transport = params.get('transport'); // 'Port' or 'Airport'
-      if (transport) {
-        newQuery.transportMode = transport as TransportType;
-        // Also ensure location matches mode
-        if (transport === TransportType.PORT && !newQuery.originLocation.includes("Port")) {
-            newQuery.originLocation = PORT_OPTIONS[0];
-        } else if (transport === TransportType.AIRPORT && !newQuery.originLocation.includes("Airport")) {
-            newQuery.originLocation = AIRPORT_OPTIONS[0];
-        }
-      }
-
-      const origin = params.get('origin');
-      if (origin) newQuery.originLocation = origin;
-
-      const commodity = params.get('commodity');
-      if (commodity) newQuery.commodity = commodity;
-
-      const date = params.get('date');
-      if (date) newQuery.date = date;
-
-      setQuery(newQuery);
-
-      if (params.get('auto') === 'true') {
-        performAnalyze(newQuery);
-      }
-    }
-  }, []);
-
   const handleModeChange = (mode: TransportType) => {
     const isPort = mode === TransportType.PORT;
     setQuery({
@@ -173,6 +116,22 @@ const ShippingCalculator: React.FC = () => {
       commodity: isPort ? CommodityType.GENERAL : AirCommodityType.GENERAL
     });
     setResults([]); // Clear previous results on mode switch
+  };
+
+  const handleAnalyze = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setResults([]);
+
+    try {
+      const analysisData = await analyzeShippingCost(query);
+      setResults(analysisData);
+    } catch (err: any) {
+      setError(err.message || 'Failed to analyze shipping costs');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExportExcel = () => {

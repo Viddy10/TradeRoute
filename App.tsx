@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import InputForm from './components/InputForm';
 import ResultsTable from './components/ResultsTable';
@@ -15,10 +16,9 @@ const App: React.FC = () => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const mode = params.get('mode');
-      if (mode === 'sea-rates') return 'bulk_rates';
-      if (mode === 'air-rates') return 'air_rates';
-      if (mode === 'shipping-cost') return 'calculator';
-      if (mode === 'data-scraping') return 'scraping';
+      if (mode === 'sea') return 'bulk_rates';
+      if (mode === 'air') return 'air_rates';
+      if (mode === 'calc') return 'calculator';
     }
     return 'scraping';
   });
@@ -28,15 +28,8 @@ const App: React.FC = () => {
   const [status, setStatus] = useState<GenerationStatus>({ loading: false, message: '' });
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
-  const handleTabChange = (tab: 'scraping' | 'calculator' | 'bulk_rates' | 'air_rates', slug: string) => {
-    setActiveTab(tab);
-    // Update URL without reloading page
-    const newUrl = `${window.location.pathname}?mode=${slug}`;
-    window.history.pushState({ path: newUrl }, '', newUrl);
-  };
-
   const handleSearch = async (params: LocationParams) => {
-    setStatus({ loading: true, message: 'Menghubungi AI (Berpikir)...' });
+    setStatus({ loading: true, message: 'Initiating Gemini 3 Pro (Thinking)...' });
     setData([]);
     
     try {
@@ -44,7 +37,7 @@ const App: React.FC = () => {
       setData(results);
       setStatus({ loading: false, message: '' });
     } catch (error: any) {
-      setStatus({ loading: false, message: '', error: error.message || 'Terjadi kesalahan sistem.' });
+      setStatus({ loading: false, message: '', error: error.message || 'An error occurred' });
     }
   };
 
@@ -54,7 +47,9 @@ const App: React.FC = () => {
     if (!item) return;
 
     try {
+      // Use Gemini 2.5 Flash + Maps Grounding
       const verifiedData = await verifyLocationWithMaps(item);
+      
       setData(prevData => prevData.map(d => 
         d.id === id ? { ...d, ...verifiedData } : d
       ));
@@ -75,16 +70,16 @@ const App: React.FC = () => {
               <Ship className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">
-                FreightForwarder.site
+              <h1 className="text-xl font-bold bg-gradient-to-r from-red-700 to-red-500 bg-clip-text text-transparent">
+                TradeRoute
               </h1>
-              <p className="text-[10px] text-red-600 font-bold uppercase tracking-widest leading-none">AI Marketing Assistant</p>
+              <p className="text-xs text-slate-500 font-medium tracking-wide">GLOBAL LOGISTICS DATA EXTRACTOR</p>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-4 text-xs font-medium text-slate-500">
             <span className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-md">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-              AI Engine Aktif
+              <span className="w-2 h-2 rounded-full bg-red-500"></span>
+              Gemini 3 Pro (Thinking)
             </span>
           </div>
         </div>
@@ -96,7 +91,7 @@ const App: React.FC = () => {
         <div className="flex justify-center">
           <div className="bg-slate-100 p-1.5 rounded-xl inline-flex shadow-inner overflow-x-auto max-w-full">
             <button
-              onClick={() => handleTabChange('scraping', 'data-scraping')}
+              onClick={() => setActiveTab('scraping')}
               className={`
                 flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap
                 ${activeTab === 'scraping' 
@@ -105,10 +100,10 @@ const App: React.FC = () => {
               `}
             >
               <Database className="w-4 h-4" />
-              Scraping Pelabuhan & Bandara
+              Data Scraping
             </button>
             <button
-              onClick={() => handleTabChange('bulk_rates', 'sea-rates')}
+              onClick={() => setActiveTab('bulk_rates')}
               className={`
                 flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap
                 ${activeTab === 'bulk_rates' 
@@ -120,7 +115,7 @@ const App: React.FC = () => {
               Sea Rates
             </button>
             <button
-              onClick={() => handleTabChange('air_rates', 'air-rates')}
+              onClick={() => setActiveTab('air_rates')}
               className={`
                 flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap
                 ${activeTab === 'air_rates' 
@@ -132,7 +127,7 @@ const App: React.FC = () => {
               Air Rates
             </button>
             <button
-              onClick={() => handleTabChange('calculator', 'shipping-cost')}
+              onClick={() => setActiveTab('calculator')}
               className={`
                 flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap
                 ${activeTab === 'calculator' 
@@ -147,13 +142,13 @@ const App: React.FC = () => {
         </div>
 
         {/* Dynamic Content */}
-        {activeTab === 'scraping' && (
+        {activeTab === 'scraping' && (activeTab === 'scraping' && (
           <div className="animate-fade-in space-y-8">
             <div className="max-w-3xl">
-              <h2 className="text-3xl font-bold text-slate-900 mb-3">Ekstraksi Data Logistik Global</h2>
+              <h2 className="text-3xl font-bold text-slate-900 mb-3">Port & Airport Data Scraping</h2>
               <p className="text-slate-600 text-lg">
-                Gunakan AI untuk mengumpulkan data pelabuhan dan bandara di seluruh dunia secara akurat. 
-                Data mencakup kode IATA/UN, kategori, hingga koordinat geografis.
+                Generate valid trade logistics data including coordinates, IATA/UN codes, and classifications using AI reasoning. 
+                Verify locations via Google Maps Grounding.
               </p>
             </div>
             <InputForm onSearch={handleSearch} isLoading={status.loading} />
@@ -169,7 +164,7 @@ const App: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
                   <Anchor className="w-5 h-5 text-slate-400" />
-                  Hasil Scraping ({data.length})
+                  Extracted Data ({data.length})
                 </h3>
                 <ExportButtons data={data} disabled={data.length === 0 || status.loading} />
               </div>
@@ -178,14 +173,9 @@ const App: React.FC = () => {
                 onVerify={handleVerify}
                 verifyingId={verifyingId}
               />
-              {data.length > 0 && (
-                <div className="p-4 bg-slate-900 text-white text-xs text-center rounded-lg italic">
-                  Hubungi tim FreightForwarder.site untuk konsultasi logistik.
-                </div>
-              )}
             </div>
           </div>
-        )}
+        ))}
 
         {activeTab === 'bulk_rates' && (
           <BulkRateSearch />
@@ -208,10 +198,10 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4">
           <p className="text-xl font-bold tracking-tight">
             <span className="text-red-600">Freight</span>
-            <span className="text-black">Forwarder.site</span>
+            <span className="text-black">Forwarder</span>
           </p>
           <p className="text-xs text-slate-400 mt-2 font-medium uppercase tracking-widest">
-            Internal Logistics Marketing Platform
+            Logistics Intelligence Platform
           </p>
         </div>
       </footer>
