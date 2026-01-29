@@ -111,23 +111,25 @@ const AirRateSearch: React.FC = () => {
         "commodity": item.commodity,
         "currency": item.currency,
         "rate": item.estimatedPrice,
-        "FuelSurcharge": item.fuelSurcharge,
-        "WarRiskSurcharge": item.warRiskSurcharge,
-        "ULD": item.uld,
-        "DGhandling": item.dgHandling,
-        "TempControl": item.tempControl,
-        "PerishableFee": item.perishableFee,
-        "OversizeFee": item.oversizeFee,
         "validUntil": item.validity,
         "transitTime": item.transitTime,
         "frequency": item.frequency,
-        "carrier": item.airlineIndication
+        "carrier": item.airlineIndication,
+        // Specific fields appended if available
+        "etd": item.etd || 'N/A',
+        "flightNumber": item.flightNumber || 'N/A',
+        "aircraftType": item.aircraftType || 'N/A',
+        // Extra charges usually needed for air
+        "FuelSurcharge": item.fuelSurcharge,
+        "WarRiskSurcharge": item.warRiskSurcharge,
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Air Rates");
     const regionName = query.destinationRegion.replace(/\s/g, '_');
     XLSX.writeFile(wb, `Air_Rates_${regionName}_${query.targetDate}.xlsx`);
   };
+
+  const isSpecificSearch = !!query.destinationAirport && query.destinationAirport.trim().length > 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -292,90 +294,117 @@ const AirRateSearch: React.FC = () => {
                 <tr>
                   <th className="px-4 py-3">origin</th>
                   <th className="px-4 py-3">destination</th>
-                  <th className="px-4 py-3">weightBreak</th>
+                  <th className="px-4 py-3">containerType</th>
                   <th className="px-4 py-3">commodity</th>
                   <th className="px-4 py-3">currency</th>
                   <th className="px-4 py-3">rate</th>
-                  <th className="px-4 py-3">FuelSurcharge</th>
-                  <th className="px-4 py-3">WarRiskSurcharge</th>
-                  <th className="px-4 py-3">ULD</th>
-                  <th className="px-4 py-3">DGhandling</th>
-                  <th className="px-4 py-3">TempControl</th>
-                  <th className="px-4 py-3">PerishableFee</th>
-                  <th className="px-4 py-3">OversizeFee</th>
                   <th className="px-4 py-3">validUntil</th>
                   <th className="px-4 py-3">transitTime</th>
                   <th className="px-4 py-3">frequency</th>
                   <th className="px-4 py-3">carrier</th>
-                  <th className="px-4 py-3 text-right">Action</th>
+                  
+                  {/* Specific Search Extra Columns */}
+                  {isSpecificSearch && (
+                    <>
+                      <th className="px-4 py-3 border-l border-slate-200">Flight Info</th>
+                      <th className="px-4 py-3 text-right">Action</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {results.map((item, idx) => (
                   <tr key={idx} className="hover:bg-slate-50">
+                    {/* 1. Origin */}
                     <td className="px-4 py-3 text-sm font-medium text-slate-700">
                       {item.originAirport.split('-')[0].trim()}
                     </td>
+
+                    {/* 2. Destination */}
                     <td className="px-4 py-3">
                       <div className="font-semibold text-slate-800">{item.destinationAirport}</div>
                       <div className="text-xs text-slate-500">{item.country}</div>
                     </td>
+
+                    {/* 3. Weight/Container Type (Reusing label from request) */}
                     <td className="px-4 py-3">
                       <div className="text-xs text-slate-500 font-medium">{item.weightBreak}</div>
                     </td>
+
+                    {/* 4. Commodity */}
                     <td className="px-4 py-3">
                       <div className="text-xs font-semibold text-red-700 bg-red-50 px-2 py-1 rounded">
                         {item.commodity?.split('(')[0].trim() || 'General'}
                       </div>
                     </td>
+
+                    {/* 5. Currency */}
                     <td className="px-4 py-3 text-slate-500 font-medium">
                       {item.currency}
                     </td>
+
+                    {/* 6. Rate */}
                     <td className="px-4 py-3">
                       <span className="font-bold text-red-700 text-lg">
                         {Number(item.estimatedPrice.replace(/[^0-9.]/g, '')).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{item.fuelSurcharge}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.warRiskSurcharge}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.uld}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.dgHandling}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.tempControl}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.perishableFee}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.oversizeFee}</td>
-                    <td className="px-4 py-3 text-slate-600">
-                      <div className="flex items-center gap-1.5">
-                        <CalendarCheck className="w-3.5 h-3.5 text-slate-400" />
+
+                    {/* 7. Valid Until */}
+                     <td className="px-4 py-3 text-xs text-slate-500">
+                      <div className="flex items-center gap-1">
+                        <CalendarCheck className="w-3 h-3" />
                         {item.validity}
                       </div>
                     </td>
+
+                    {/* 8. Transit Time */}
                     <td className="px-4 py-3 text-slate-600">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        {item.transitTime}
+                       <div className="text-xs text-slate-500 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> {item.transitTime}
+                       </div>
+                    </td>
+
+                    {/* 9. Frequency */}
+                    <td className="px-4 py-3 text-xs text-slate-600">
+                      <div className="flex items-center gap-1">
+                         <RefreshCw className="w-3 h-3" />
+                         {item.frequency}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{item.frequency}</td>
+
+                    {/* 10. Carrier */}
                     <td className="px-4 py-3 text-xs text-slate-500 font-semibold italic">{item.airlineIndication}</td>
-                     <td className="px-4 py-3 text-right">
-                      {item.verified ? (
-                        <a 
-                          href={item.mapsUri} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                        </a>
-                      ) : (
-                        <button
-                          onClick={() => handleVerify(item)}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                        >
-                          <MapPin className="w-4 h-4" />
-                        </button>
-                      )}
-                    </td>
+
+                    {/* Specific Search Extra Cells */}
+                    {isSpecificSearch && (
+                      <>
+                        <td className="px-4 py-3 border-l border-slate-200 text-slate-600">
+                          <div className="text-sm font-medium text-slate-800">{item.flightNumber || 'N/A'}</div>
+                          <div className="text-xs text-slate-500">{item.aircraftType || '-'}</div>
+                          <div className="text-xs text-slate-500 mt-1">ETD: {item.etd || 'N/A'}</div>
+                        </td>
+                         <td className="px-4 py-3 text-right">
+                          {item.verified ? (
+                            <a 
+                              href={item.mapsUri} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </a>
+                          ) : (
+                            <button
+                              onClick={() => handleVerify(item)}
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                            >
+                              <MapPin className="w-4 h-4" />
+                            </button>
+                          )}
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>

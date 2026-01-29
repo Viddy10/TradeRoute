@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { CommodityType, ContainerSize, BulkRateQuery, BulkRateItem, RegionDestination } from '../types';
 import { generateBulkRates } from '../services/geminiService';
-import { Ship, Calendar, Package, DollarSign, Clock, Download, CalendarCheck, CalendarDays, Globe, Info, MapPin } from 'lucide-react';
+import { Ship, Calendar, Package, DollarSign, Clock, Download, CalendarCheck, CalendarDays, Globe, Info, MapPin, RefreshCw } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const INDONESIAN_PORTS = [
@@ -98,20 +98,26 @@ const BulkRateSearch: React.FC = () => {
     const ws = XLSX.utils.json_to_sheet(results.map(item => ({
         "origin": item.originPort,
         "destination": item.destinationPort,
-        "commodity": item.commodity,
         "containerType": item.containerSize,
+        "commodity": item.commodity,
         "currency": item.currency,
         "rate": item.estimatedPrice,
+        "validUntil": item.validity,
         "transitTime": item.transitTime,
         "frequency": item.frequency,
-        "validUntil": item.validity,
-        "carrier": item.carrierIndication
+        "carrier": item.carrierIndication,
+        // Specific fields appended if available
+        "etd": item.etd || 'N/A',
+        "vessel": item.vesselName || 'N/A',
+        "voyage": item.voyage || 'N/A',
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Weekly Rates");
     const regionName = query.destinationRegion.replace(/\s/g, '_');
     XLSX.writeFile(wb, `Sea_Rates_${regionName}_${query.targetDate}.xlsx`);
   };
+
+  const isSpecificSearch = !!query.destinationPort && query.destinationPort.trim().length > 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -272,59 +278,103 @@ const BulkRateSearch: React.FC = () => {
                 <tr>
                   <th className="px-4 py-3">origin</th>
                   <th className="px-4 py-3">destination</th>
-                  <th className="px-4 py-3">commodity</th>
                   <th className="px-4 py-3">containerType</th>
+                  <th className="px-4 py-3">commodity</th>
                   <th className="px-4 py-3">currency</th>
                   <th className="px-4 py-3">rate</th>
+                  <th className="px-4 py-3">validUntil</th>
                   <th className="px-4 py-3">transitTime</th>
                   <th className="px-4 py-3">frequency</th>
-                  <th className="px-4 py-3">validUntil</th>
                   <th className="px-4 py-3">carrier</th>
+                  
+                  {/* Specific Search Extra Columns */}
+                  {isSpecificSearch && (
+                    <>
+                      <th className="px-4 py-3 border-l border-slate-200">ETD</th>
+                      <th className="px-4 py-3">Vessel / Voyage</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {results.map((item, idx) => (
                   <tr key={idx} className="hover:bg-slate-50">
+                    {/* 1. Origin */}
                     <td className="px-4 py-3 text-sm font-medium text-slate-700">
                       {item.originPort}
                     </td>
+
+                    {/* 2. Destination */}
                     <td className="px-4 py-3">
                       <div className="font-semibold text-slate-800">{item.destinationPort}</div>
                       <div className="text-xs text-slate-500">{item.country}</div>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-semibold text-red-700 bg-red-50 px-2 py-1 rounded">
-                        {item.commodity?.split('(')[0].trim() || 'General'}
-                      </span>
-                    </td>
+
+                    {/* 3. Container Type */}
                     <td className="px-4 py-3">
                       <div className="text-xs text-slate-600 flex items-center gap-1">
                         <Package className="w-3 h-3" />
                         {item.containerSize?.split('(')[0].trim() || '40HC'}
                       </div>
                     </td>
+
+                    {/* 4. Commodity */}
+                    <td className="px-4 py-3">
+                      <span className="text-xs font-semibold text-red-700 bg-red-50 px-2 py-1 rounded">
+                        {item.commodity?.split('(')[0].trim() || 'General'}
+                      </span>
+                    </td>
+
+                    {/* 5. Currency */}
                     <td className="px-4 py-3">
                       <span className="font-medium text-slate-500">{item.currency}</span>
                     </td>
+
+                    {/* 6. Rate */}
                     <td className="px-4 py-3">
                       <span className="font-bold text-red-700 text-lg">
                         {Number(item.estimatedPrice.replace(/[^0-9.]/g, '')).toLocaleString()}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        {item.transitTime}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{item.frequency}</td>
-                    <td className="px-4 py-3 text-slate-600">
-                      <div className="flex items-center gap-1.5">
-                        <CalendarCheck className="w-3.5 h-3.5 text-slate-400" />
+
+                    {/* 7. Valid Until */}
+                    <td className="px-4 py-3 text-xs text-slate-500">
+                      <div className="flex items-center gap-1">
+                        <CalendarCheck className="w-3 h-3" />
                         {item.validity}
                       </div>
                     </td>
+
+                    {/* 8. Transit Time */}
+                    <td className="px-4 py-3 text-slate-600">
+                       <div className="text-xs text-slate-500 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> {item.transitTime}
+                       </div>
+                    </td>
+
+                    {/* 9. Frequency */}
+                    <td className="px-4 py-3 text-xs text-slate-600">
+                      <div className="flex items-center gap-1">
+                         <RefreshCw className="w-3 h-3" />
+                         {item.frequency}
+                      </div>
+                    </td>
+
+                    {/* 10. Carrier */}
                     <td className="px-4 py-3 text-xs text-slate-500 italic font-medium">{item.carrierIndication}</td>
+
+                    {/* Specific Search Extra Cells */}
+                    {isSpecificSearch && (
+                      <>
+                        <td className="px-4 py-3 border-l border-slate-200 text-slate-700 font-medium">
+                          {item.etd || 'N/A'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          <div className="text-sm font-medium text-slate-800">{item.vesselName || 'N/A'}</div>
+                          <div className="text-xs text-slate-500">{item.voyage || '-'}</div>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>

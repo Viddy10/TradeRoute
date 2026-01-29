@@ -348,7 +348,12 @@ const fetchRatesForRegion = async (
   const modelId = "gemini-3-pro-preview";
 
   const destinationContext = query.destinationPort
-    ? `SPECIFIC DESTINATION: "${query.destinationPort}". IGNORE the region parameter if it conflicts. Provide at least 3-5 different carrier options (e.g. MSC, OOCL, ONE, Maersk, Evergreen, COSCO) for this specific destination.`
+    ? `SPECIFIC DESTINATION: "${query.destinationPort}". 
+       IMPORTANT: Since a specific destination is provided, provide REALISTIC UPCOMING SCHEDULES to Validate the data.
+       - Provide at least 3-5 different carrier options (e.g. MSC, OOCL, ONE, Maersk, Evergreen).
+       - You MUST populate the 'etd' field with next specific sailing dates (e.g., '2024-05-15').
+       - You MUST populate the 'vesselName' field with a real vessel name serving this route.
+       - You MUST populate the 'voyage' field with realistic vessel voyage numbers (e.g., 'V.302N').`
     : `TARGET REGION: ${targetRegion}. Provide rates for key major ports in this region.`;
 
   const prompt = `
@@ -366,6 +371,7 @@ const fetchRatesForRegion = async (
     1. PROVIDE A SINGLE NUMERIC PRICE ONLY. DO NOT PROVIDE RANGES.
     2. THE "estimatedPrice" FIELD MUST CONTAIN ONLY NUMBERS.
     3. PROVIDE THE CURRENCY SEPARATELY IN THE "currency" FIELD.
+    4. IF specific destination is set, 'etd', 'vesselName', and 'voyage' are MANDATORY for validation.
 
     OUTPUT JSON STRUCTURE:
     [{
@@ -377,7 +383,10 @@ const fetchRatesForRegion = async (
       "transitTime": "string",
       "frequency": "string",
       "validity": "string",
-      "carrierIndication": "string"
+      "carrierIndication": "string",
+      "etd": "string (YYYY-MM-DD) or 'Weekly'",
+      "vesselName": "string or 'N/A'",
+      "voyage": "string (e.g. V.123W) or 'N/A'"
     }]
   `;
 
@@ -393,6 +402,19 @@ const fetchRatesForRegion = async (
     const text = response.text;
     if (!text) return [];
     const items = JSON.parse(cleanJsonString(text)) as BulkRateItem[];
+
+    // Validation Logic for Specific Destination
+    if (query.destinationPort) {
+      const missingFields = items.some(item => 
+        !item.etd || item.etd === 'N/A' || 
+        !item.vesselName || item.vesselName === 'N/A' || 
+        !item.voyage || item.voyage === 'N/A'
+      );
+      if (missingFields) {
+        console.warn("Validation Warning: One or more items are missing mandatory schedule fields (ETD, Vessel, Voyage) for the requested destination.");
+      }
+    }
+
     return items.map(item => ({
       ...item,
       commodity: query.commodity,
@@ -408,10 +430,10 @@ const fetchRatesForRegion = async (
 export const generateBulkRates = async (query: BulkRateQuery): Promise<BulkRateItem[]> => {
   try {
     let regionsToFetch: RegionDestination[] = [];
-    if (query.destinationRegion === RegionDestination.ALL) {
+    if (query.destinationRegion === RegionDestination.ALL && !query.destinationPort) {
       regionsToFetch = Object.values(RegionDestination).filter(r => r !== RegionDestination.ALL) as RegionDestination[];
     } else {
-      regionsToFetch = [query.destinationRegion];
+      regionsToFetch = [query.destinationRegion]; 
     }
     const allResults: BulkRateItem[] = [];
     for (const region of regionsToFetch) {
@@ -434,42 +456,43 @@ const fetchAirRatesForRegion = async (
   const modelId = "gemini-3-pro-preview";
 
   const destinationContext = query.destinationAirport 
-    ? `SPECIFIC DESTINATION: "${query.destinationAirport}". IGNORE the region parameter if it conflicts. Provide at least 3-5 different carrier options (e.g. Direct, Transit, different airlines) for this specific destination.`
+    ? `SPECIFIC DESTINATION: "${query.destinationAirport}". 
+       IMPORTANT: Since a specific destination is provided, provide REALISTIC UPCOMING FLIGHT SCHEDULES to Validate the data.
+       - Provide at least 3-5 different carrier options.
+       - You MUST populate 'etd' with specific next flight times.
+       - You MUST populate 'flightNumber' with realistic flight numbers.
+       - You MUST populate 'aircraftType' with the likely aircraft (e.g. B777F, A330).`
     : `TARGET REGION: ${targetRegion}. Provide rates for key major airports in this region.`;
 
   const prompt = `
-    Act as a Senior Air Freight Pricing Manager.
-    Create a **Real-Time Market Rate Sheet** for Air Exports from ${query.originAirport}, Indonesia.
-
+    Act as a Senior Air Freight Pricing Specialist.
+    I need a **High-Density** "Weekly Air Freight Rate Sheet" for EXPORT from ${query.originAirport}.
+    
     ${destinationContext}
 
-    PRICING RULES:
-    1. PROVIDE A SINGLE NUMERIC PRICE ONLY. NO RANGES.
-    2. THE "estimatedPrice" FIELD MUST CONTAIN ONLY NUMBERS.
-    3. PROVIDE THE CURRENCY SEPARATELY IN THE "currency" FIELD.
+    PARAMETERS:
+    - Commodity: ${query.commodity}
+    - Weight Break: ${query.weightBreak}
+    - Target Reference Date: ${query.targetDate}
 
-    REQUIRED FIELDS & LOGIC:
-    - origin: ${query.originAirport}
-    - weightBreak: ${query.weightBreak}
-    - commodity: ${query.commodity}
-    - FuelSurcharge: Estimate Fuel Surcharge per kg.
-    - WarRiskSurcharge: Estimate only if the route passes through a high-risk/war zone (otherwise "N/A" or "0").
-    - ULD: Guaranteed or market ULD space indication.
-    - DGhandling: Estimate handling fee ONLY IF commodity is "Dangerous Goods (DG)". If not, set "0" or "N/A".
-    - TempControl: Estimate fee ONLY IF commodity is "Pharma / Drugs (PIL)" or "Reefer / Perishable". If not, set "0" or "N/A".
-    - PerishableFee: Estimate fee ONLY IF commodity is "Reefer / Perishable" or "Live Animals (AVI)". If not, set "0" or "N/A".
-    - OversizeFee: Estimate fee ONLY IF commodity is "Heavy Cargo (HEA)" or "Project Cargo". If not, set "0" or "N/A".
+    PRICING RULES:
+    1. PROVIDE A SINGLE NUMERIC PRICE ONLY.
+    2. THE "estimatedPrice" FIELD MUST CONTAIN ONLY NUMBERS.
+    3. PROVIDE THE CURRENCY SEPARATELY.
+    4. BREAKDOWN ADDITIONAL FEES (Fuel, War Risk, ULD, etc) if available.
+    5. IF specific destination is set, 'etd', 'flightNumber' and 'aircraftType' are MANDATORY for validation.
 
     OUTPUT JSON STRUCTURE:
     [{
-      "destinationAirport": "string (IATA Code + City)",
+      "originAirport": "string (IATA)",
+      "destinationAirport": "string (IATA + City)",
       "country": "string",
       "region": "string",
-      "currency": "string (e.g. USD)",
-      "estimatedPrice": "string (NUMBERS ONLY)",
+      "currency": "string (e.g. IDR, USD)",
+      "estimatedPrice": "string (Numbers Only)",
       "fuelSurcharge": "string",
       "warRiskSurcharge": "string",
-      "uld": "string",
+      "uld": "string (Screening/Handling)",
       "dgHandling": "string",
       "tempControl": "string",
       "perishableFee": "string",
@@ -477,7 +500,10 @@ const fetchAirRatesForRegion = async (
       "transitTime": "string",
       "frequency": "string",
       "validity": "string",
-      "airlineIndication": "string"
+      "airlineIndication": "string",
+      "etd": "string (Time/Date) or 'Daily'",
+      "flightNumber": "string (e.g. GA890) or 'N/A'",
+      "aircraftType": "string (e.g. B747-400F) or 'N/A'"
     }]
   `;
 
@@ -493,16 +519,29 @@ const fetchAirRatesForRegion = async (
     const text = response.text;
     if (!text) return [];
     const items = JSON.parse(cleanJsonString(text)) as AirRateItem[];
-    return items.map(item => ({
+
+    // Validation Logic for Specific Destination
+    if (query.destinationAirport) {
+      const missingFields = items.some(item => 
+        !item.etd || item.etd === 'N/A' || 
+        !item.flightNumber || item.flightNumber === 'N/A' || 
+        !item.aircraftType || item.aircraftType === 'N/A'
+      );
+      if (missingFields) {
+        console.warn("Validation Warning: One or more items are missing mandatory flight schedule fields (ETD, Flight Number, Aircraft Type) for the requested destination.");
+      }
+    }
+
+    return items.map((item, index) => ({
       ...item,
-      id: `air-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `air-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`,
+      originAirport: query.originAirport,
       commodity: query.commodity,
       weightBreak: query.weightBreak,
-      originAirport: query.originAirport,
       verified: false
     }));
   } catch (error) {
-    console.warn(`Air rate generation failed for ${targetRegion}:`, error);
+    console.warn(`Air Rate generation failed for ${targetRegion}:`, error);
     return [];
   }
 };
@@ -510,7 +549,7 @@ const fetchAirRatesForRegion = async (
 export const generateAirRates = async (query: AirRateQuery): Promise<AirRateItem[]> => {
   try {
     let regionsToFetch: RegionDestination[] = [];
-    if (query.destinationRegion === RegionDestination.ALL) {
+    if (query.destinationRegion === RegionDestination.ALL && !query.destinationAirport) {
       regionsToFetch = Object.values(RegionDestination).filter(r => r !== RegionDestination.ALL) as RegionDestination[];
     } else {
       regionsToFetch = [query.destinationRegion];
@@ -524,6 +563,6 @@ export const generateAirRates = async (query: AirRateQuery): Promise<AirRateItem
     return allResults.sort((a, b) => a.country.localeCompare(b.country));
   } catch (error) {
     console.error("Air Rate Orchestration Error:", error);
-    throw new Error("Failed to generate air market rates. Please try again.");
+    throw new Error("Failed to generate air rates. Please try again.");
   }
 };

@@ -142,6 +142,9 @@ export interface BulkRateItem {
   frequency: string; // e.g., "Weekly"
   validity: string; // e.g., "Valid until end of week 42"
   carrierIndication: string; // e.g., "MSC, Maersk, Evergreen"
+  etd?: string; // Estimated Time of Departure (Specific Date)
+  vesselName?: string; // Vessel Name for validation
+  voyage?: string; // Vessel Voyage Number
   commodity?: string;
   containerSize?: string;
   originPort?: string;
@@ -186,7 +189,10 @@ export interface AirRateItem {
   transitTime: string;
   frequency: string;
   validity: string;
-  airlineIndication: string; 
+  airlineIndication: string;
+  etd?: string; // Estimated Time of Departure (Specific Time/Date)
+  flightNumber?: string; // Flight Number
+  aircraftType?: string; // Aircraft Type for validation (e.g. B777F)
   commodity?: string;
   weightBreak?: string;
   mapsUri?: string; 
